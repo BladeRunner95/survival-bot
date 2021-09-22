@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../botking-bot/.idea/botking-bot.iml" filepath="$PROJECT_DIR$/../botking-bot/.idea/botking-bot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/survival-bot.iml" filepath="$PROJECT_DIR$/.idea/survival-bot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../survival-mongo/.idea/survival-mongo.iml" filepath="$PROJECT_DIR$/../survival-mongo/.idea/survival-mongo.iml" />
+    </modules>
+  </component>
+</project>

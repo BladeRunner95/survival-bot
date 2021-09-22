@@ -1,0 +1,22 @@
+{
+  "name": "survival-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^0.21.0",
+    "dotenv": "^10.0.0",
+    "localStorage": "^1.0.4",
+    "localstorage": "^1.0.1",
+    "node-fetch": "^2.6.1",
+    "nodemon": "^2.0.4",
+    "telegraf": "^3.38.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "nodemon src/bot.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
