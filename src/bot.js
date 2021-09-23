@@ -6,7 +6,6 @@ const Stage = require('telegraf/stage')
 const WizardScene = require('telegraf/scenes/wizard')
 const axios = require('axios');
 const env = process.env;
-// const telegrafGetChatMembers = require('telegraf-getchatmembers')
 const fetch = require("node-fetch");
 require('dotenv').config()
 
@@ -26,46 +25,38 @@ bot.start((ctx) => {
     let data= {
         groupId: ctx.message.chat.id
     };
-    axios.post(`http://localhost:4000/api/groups`, data).then(res=> {
-        if (res.data.length >0) {
-             ctx.reply('The bot is already added to this group');
+
+    axios.get('http://localhost:4000/api/groups').then(res => {
+        let thisGroup = res.data.filter(singleGroup => singleGroup.groupId === ctx.message.chat.id);
+        if (thisGroup.length > 0) {
+            ctx.reply('The bot is already added to this group');
+        } else {
+            axios.post('http://localhost:4000/api/groups', data).then(res => {
+                ctx.reply('You initiated a bot', keyboards);
+            }).catch(err => console.log(err))
         }
-        else {
-         ctx.reply('You initiated a bot', keyboards)}
-    }).catch(err=> {
-        console.log(err)
     })
 })
 
 let partArr = [];
-let single = [];
-
-
-let singledingle = bot.hears('Restart',ctx => {
-    axios.get(`http://localhost:4000/api/groups/${ctx.message.chat.id}/users`).then(res=> {
-        console.log(res.data);
-        single.splice(0, single.length, res.data);
-    })
-})
-
-
-a = () => singledingle
-
-bot.hears('restart', ctx => {
-    ctx.reply('сын собаки');
-    console.log(a());
-})
-
 
 axios.get(`http://localhost:4000/api`)
     .then(res => {
-        // console.log(res.data);
     })
     .catch(err => console.log(err))
 
 
 const superWizard = new WizardScene('super-wizard',
     (ctx) => {
+        let single = [];
+        let usersIds = [];
+        let usernames = [];
+        axios.get(`http://localhost:4000/api/groups/${ctx.message.chat.id}/users`).then(res => {
+            res.data.forEach(user => single.push(user) + usersIds.push(user.userId) + usernames.push(user.username));
+            ctx.wizard.state.data.allNames = single;
+            ctx.wizard.state.data.allUsersId = usersIds;
+            ctx.wizard.state.data.allUsersNames = usernames;
+        });
 
         ctx.reply('Step 1, Create name', Markup.keyboard([
                 ['Cancel']
@@ -74,35 +65,31 @@ const superWizard = new WizardScene('super-wizard',
                 .resize()
                 .extra()
         )
+        //there might be an issue because of async above
         ctx.wizard.state.data = {};
         return ctx.wizard.next();
     },
     //step 2
     async (ctx) => {
         ctx.wizard.state.data.name = ctx.message.text;
-        let singleParticipant = [];
-        //Return all participants with admin permissions and then show buttons
-        // ctx.getChatAdministrators().then(res => {
-        //     res.forEach(member => single.push([member.user.username]));
             if (ctx.message.text === 'Cancel') {
-                // localStorage.removeItem(`expense${ctx.tg.token}`);
                 ctx.reply('Main menu', keyboards);
                 partArr= [];
                 return ctx.scene.leave();
             } else {
                 //Adding array of users as buttons
-                ctx.wizard.state.data.allNames = single;
+                // ctx.wizard.state.data.allNames = single;
                 let buttons = [
                     ['All'],
                 ]
-                single.forEach(
-                    participant => {
-                        participant.forEach(v3 =>{
-                            if (!partArr.some(addedPart => v3.id.includes(addedPart.id))) {
-                                buttons.push(v3.id)
+                ctx.wizard.state.data.allNames.forEach(
+                    name =>{
+                        //переделать с юзернейма на объект с айди
+                            if (!partArr.some(addedPart => name.username.includes(addedPart))) {
+                                buttons.push([name.username]);
                             }
-                        })
-                    })
+                        }
+                    )
                 buttons.push(['Next', 'Cancel']);
                 if (ctx.wizard.state.data.name !== 'Back') {
                     ctx.reply(` Step 2, You created an expense: ${ctx.wizard.state.data.name}`)
@@ -124,8 +111,6 @@ const superWizard = new WizardScene('super-wizard',
                 );
                 return ctx.wizard.next();
             }
-        // }
-    // ).catch(err=> console.log(err));
     },
     //step 3
     (ctx) => {
@@ -153,7 +138,7 @@ const superWizard = new WizardScene('super-wizard',
         else {
             if (ctx.message.text !== "Back") {
                 if (ctx.message.text === "All") {
-                    ctx.wizard.state.data.participants = ctx.wizard.state.data.allNames;
+                    ctx.wizard.state.data.participants = ctx.wizard.state.data.allUsersNames;
                     ctx.wizard.state.data.allNames.forEach(participant=> partArr.push(participant));
                     ctx.reply(` Step 3, You selected participants: ${ctx.wizard.state.data.participants}`)
                     ctx.reply(` Please add amount`, Markup
@@ -165,6 +150,7 @@ const superWizard = new WizardScene('super-wizard',
                         .extra()
                     );
                     return ctx.wizard.next();
+                    //probably need to delete next else if as it is extra
                 } else if (ctx.message.text.includes("Add")) {
                     ctx.reply(`You choose ${ctx.wizard.state.data.participants}`)
                     ctx.message.text = ctx.wizard.state.data.name;
@@ -207,7 +193,6 @@ const superWizard = new WizardScene('super-wizard',
             const isNum = /^\d+$/.test(ctx.wizard.state.data.amount);
             if (isNum) {
                 let fromEach = ctx.wizard.state.data.amount / ctx.wizard.state.data.participants.length;
-                ctx.reply(` Step 4, You added amount: ${ctx.wizard.state.data.amount}`)
                     // Следующий реплай должен идти после успешного добавления платежа в бд
                 let date = Date.now();
                 let data = {
@@ -227,7 +212,7 @@ const superWizard = new WizardScene('super-wizard',
                             `
                     ${ctx.from.first_name} Just created a new expense
                     Expense: ${ctx.wizard.state.data.name}
-                    Participants: ${ctx.wizard.state.data.participants}
+                    Participants: ${ctx.wizard.state.data.participants.join(', ')}
                     Amount: ${ctx.wizard.state.data.amount}
                     From each: ${fromEach}`,
                             keyboards)
@@ -254,30 +239,11 @@ bot.hears('id', ctx => {
     ctx.reply(`Your id: ${ctx.from.id} \nYour username: ${ctx.from.username}`);
 })
 
-let arr1 = [];
-bot.hears('rfctr', ctx => {
-
-    ctx.getChatAdministrators().then(
-        res=> res.forEach(member => arr1.push([member.user]))
-    ).catch(err=> console.log(err));
-})
-
-bot.hears('cm', ctx => {
-    arr1.forEach(
-        participant => {
-            participant.forEach(one=> {
-                if (!partArr.some(bogdan => one.username.includes(bogdan))) {
-                    console.log(Array(one.username));
-                }
-            })
-        })
-})
-
 bot.hears('Create Expense 💰', Stage.enter('super-wizard'))
 
 
 bot.hears('Expenses 📝', (ctx) => {
-    axios.get(`http://localhost:4000/api/expenses`).then(
+    axios.get(`http://localhost:4000/api/groups/${ctx.message.chat.id}/expenses`).then(
         res => {
             if (res.data.length > 0) {
                 {
@@ -292,8 +258,6 @@ bot.hears('Expenses 📝', (ctx) => {
                                 }
                                 axios.put(`http://localhost:4000/api/expenses/${singleExpense._id}`, data).then(
                                     res => {
-                                        console.log(res.data);
-
                                     }).catch(err=> console.log(err));
                                 ctx.editMessageText('<i>You settled</i>',
                                     Extra.HTML())
@@ -304,8 +268,6 @@ bot.hears('Expenses 📝', (ctx) => {
                                     }
                                     axios.put(`http://localhost:4000/api/expenses/${singleExpense._id}`, data).then(
                                         res => {
-                                            console.log(res.data);
-
                                         }).catch(err=> console.log(err));
                                     ctx.editMessageText(`<i>The expense is closed</i>`,
                                         Extra.HTML())
@@ -341,10 +303,8 @@ bot.hears('Expenses 📝', (ctx) => {
     ).catch(err=>console.log(err));
 })
 
-
-
 bot.hears('History 📜', (ctx) => {
-    axios.get(`http://localhost:4000/api/expenses`).then(
+    axios.get(`http://localhost:4000/api/groups/${ctx.message.chat.id}/expenses`).then(
         res => {
             if (res.data.length > 0) {
                 {
@@ -394,7 +354,6 @@ bot.hears('Join', (ctx => {
 
             } else {
                 axios.post(`http://localhost:4000/api/groups/${ctx.message.chat.id}/users`, data).then(res => {
-                    single.push([res.data]);
                     ctx.reply('You are added to the bot');
                 }).catch(err => console.log(err))
             }
@@ -402,11 +361,6 @@ bot.hears('Join', (ctx => {
         })
     })
 )
-bot.hears('e', (ctx => {
-    axios.get(`http://localhost:4000/api/groups/${ctx.message.chat.id}/users`).then(res=> {
-        console.log(res.data);
-    })
-}))
 
 
 bot.on(['sticker', 'photo'], (ctx) => {
