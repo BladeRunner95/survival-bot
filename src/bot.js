@@ -214,7 +214,7 @@ const superWizard = new WizardScene('super-wizard',
                     Expense: ${ctx.wizard.state.data.name}
                     Participants: ${ctx.wizard.state.data.participants.join(', ')}
                     Amount: ${ctx.wizard.state.data.amount}
-                    From each: ${fromEach}`,
+                    From each: ${Math.round(fromEach)}`,
                             keyboards)
                         //cleanup array
                         partArr = [];
@@ -276,7 +276,7 @@ bot.hears('Expenses 📝', (ctx) => {
                                 '\n' + 'Name: ' + singleExpense.name +
                                 '\n' + 'Participants: ' + singleExpense.participants.join(', ') +
                                 '\n' + 'Amount: ' + singleExpense.amount +
-                                '\n' + 'From Each: ' + singleExpense.fromEach +
+                                '\n' + 'From Each: ' + Math.round(singleExpense.fromEach) +
                                 '\n' + 'Created by: ' + singleExpense.creatorName +
                                 '\n' + 'Not paid: ' + ((singleExpense.notPaid.filter(participant => participant !== singleExpense.creatorName)).length > 0 ?
                                     singleExpense.notPaid.filter(participant => participant !== singleExpense.creatorName)
@@ -315,7 +315,7 @@ bot.hears('History 📜', (ctx) => {
                             return ('Expense' + ++index + ":" + '\n' + 'Name: ' + singleExpense.name +
                                 '\n' + 'Participants: ' + singleExpense.participants.join(', ') +
                                 '\n' + 'Amount: ' + singleExpense.amount +
-                                '\n' + 'From Each: ' + singleExpense.fromEach +
+                                '\n' + 'From Each: ' + Math.round(singleExpense.fromEach) +
                                 '\n'+ 'Created by: ' + singleExpense.creatorName +
                                 '\n' + 'Status: ' + (singleExpense.isClosed ? 'Closed' : 'Active') +
                                 '\n' + 'Created at: ' + singleExpense.createdAt)
